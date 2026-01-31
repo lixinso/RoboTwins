@@ -4,6 +4,8 @@
 
 Tagline: **Train in simulation. Win in reality.**
 
+![Humanoid Standing](images/humanoid_stand.png)
+
 ## Why RoboTwins exists
 
 Simulation is cheap and safe, but policies often fail on real robots due to the reality gap:

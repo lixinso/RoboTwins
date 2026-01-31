@@ -33,6 +33,10 @@ def make_env(run_cfg: RunConfig) -> SimEnv:
             include_state=run_cfg.env.include_state,
             frame_stack=run_cfg.env.frame_stack,
             render=run_cfg.mujoco.render,
+            pose_lock=getattr(run_cfg, "humanoid").pose_lock,
+            stabilize=getattr(run_cfg, "humanoid").stabilize,
+            kp=getattr(run_cfg, "humanoid").kp,
+            kd=getattr(run_cfg, "humanoid").kd,
         )
         return HumanoidVisionEnv(env_cfg)
 
