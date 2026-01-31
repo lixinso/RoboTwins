@@ -1,0 +1,17 @@
+seed: 0
+env:
+  name: humanoid
+  obs: vision
+  control_hz: 50
+  include_state: true
+  frame_stack: 1
+  camera:
+    name: track
+    width: 640
+    height: 480
+    fps: 30
+mujoco:
+  # Leave blank to use Gymnasium's packaged humanoid.xml.
+  model_path: ""
+  mock: false
+  render: true
