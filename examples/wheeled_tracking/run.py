@@ -1,5 +1,8 @@
 import argparse
+import os
+import signal
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -15,6 +18,55 @@ try:
     import mujoco.viewer
 except Exception:
     mujoco = None
+
+
+def _terminate_existing_viewer(pid_file: Path) -> None:
+    if not pid_file.exists():
+        return
+    try:
+        pid = int(pid_file.read_text(encoding="utf-8").strip())
+    except (ValueError, OSError):
+        pid_file.unlink(missing_ok=True)
+        return
+    try:
+        os.kill(pid, signal.SIGTERM)
+        _wait_for_exit(pid, timeout=2.0)
+    except ProcessLookupError:
+        pass
+    except PermissionError:
+        print("warning: could not terminate existing viewer process")
+    pid_file.unlink(missing_ok=True)
+
+
+def _wait_for_exit(pid: int, timeout: float) -> None:
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return
+        time.sleep(0.1)
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except ProcessLookupError:
+        return
+
+
+def _write_pid(pid_file: Path) -> None:
+    try:
+        pid_file.write_text(str(os.getpid()), encoding="utf-8")
+    except OSError:
+        return
+
+
+def _clear_pid(pid_file: Path) -> None:
+    if pid_file.exists():
+        try:
+            pid = int(pid_file.read_text(encoding="utf-8").strip())
+        except (ValueError, OSError):
+            pid = None
+        if pid is None or pid == os.getpid():
+            pid_file.unlink(missing_ok=True)
 
 
 def main() -> int:
@@ -40,7 +92,23 @@ def main() -> int:
         action="store_true",
         help="Open a MuJoCo viewer window.",
     )
+    parser.add_argument(
+        "--keep-open",
+        dest="keep_open",
+        action="store_true",
+        help="Keep the viewer open after stepping (default).",
+    )
+    parser.add_argument(
+        "--no-keep-open",
+        dest="keep_open",
+        action="store_false",
+        help="Close the viewer immediately after stepping.",
+    )
+    parser.set_defaults(keep_open=True)
     args = parser.parse_args()
+
+    pid_file = Path(tempfile.gettempdir()) / "robotwins_viewer.pid"
+    _terminate_existing_viewer(pid_file)
 
     run_cfg = load_run_config(args.config)
     if args.mock:
@@ -60,6 +128,14 @@ def main() -> int:
     )
     env = WheeledVisionEnv(env_cfg)
     viewer = None
+    running = True
+
+    def _handle_signal(_signum, _frame) -> None:
+        nonlocal running
+        running = False
+
+    signal.signal(signal.SIGTERM, _handle_signal)
+    signal.signal(signal.SIGINT, _handle_signal)
     try:
         obs = env.reset(seed=run_cfg.seed)
         print(f"reset obs keys: {list(obs.keys())}")
@@ -79,6 +155,12 @@ def main() -> int:
             if viewer is not None:
                 viewer.sync()
                 time.sleep(env.get_timestep())
+        if viewer is not None and running and args.keep_open:
+            _write_pid(pid_file)
+            print("viewer running; press Ctrl+C or re-run script to replace it")
+            while running:
+                viewer.sync()
+                time.sleep(env.get_timestep())
         print("run completed")
     except (RuntimeError, NotImplementedError, ValueError) as exc:
         print(str(exc))
@@ -86,6 +168,7 @@ def main() -> int:
     finally:
         if viewer is not None:
             viewer.close()
+        _clear_pid(pid_file)
         env.close()
     return 0
 
