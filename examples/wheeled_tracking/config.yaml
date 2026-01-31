@@ -1,0 +1,16 @@
+seed: 0
+env:
+  name: wheeled_tracking
+  obs: vision
+  control_hz: 50
+  include_state: true
+  frame_stack: 2
+  camera:
+    name: front
+    width: 128
+    height: 128
+    fps: 30
+mujoco:
+  model_path: examples/wheeled_tracking/models/wheeled.xml
+  mock: false
+  render: true

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robotwins"
+version = "0.1.0"
+description = "Physics-first sim2real toolkit for robot digital twins."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "mujoco>=3.1.0",
+  "gymnasium>=0.29.0",
+  "numpy>=1.23.0",
+  "pyyaml>=6.0",
+]
+
+[project.scripts]
+robotwins = "robotwins.cli.main:main"

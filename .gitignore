@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+.env
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# OS files
+.DS_Store
+
+# ML artifacts
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npz
+*.npy
+events.out.tfevents*
+
+# Logs and outputs
+logs/
+runs/
+reports/
+outputs/
+wandb/
+tensorboard/
+
+# Data
+data/
+datasets/
+real_logs/
